@@ -5,4 +5,8 @@ function Button() {
   return (<button type='button' className={css.button}>Load more</button>)
 }
 
+Button.propTypes = {
+  
+}
+
 export default Button;
