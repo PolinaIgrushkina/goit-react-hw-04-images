@@ -45,7 +45,7 @@ render() {
       {this.state.pictures.map(picture => {return <ImageGalleryItem key={picture.id} webformatURL={picture.webformatURL} largeImageURL={picture.largeImageURL} tags={picture.tags} />})}
     </ul><Button onClick={this.handleLoadMore} /></>}
     {this.state.status === 'loading' && <Loader />}
-    {this.state.status === 'error' && <p>Error!</p>}
+    {this.state.status === 'error' && <p>Error! Попробуйте найти что-то другое.</p>}
   </>);
 }
 }
