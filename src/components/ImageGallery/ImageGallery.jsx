@@ -1,57 +1,80 @@
 import PropTypes from 'prop-types';
 import css from './ImageGallery.module.css';
 import ImageGalleryItem from '../ImageGalleryItem/ImageGalleryItem';
-import { Component } from 'react';
+import { useState, useEffect, useRef} from 'react';
 import fetchPictures from '../../helpers/api';
 import Loader from 'components/Loader/Loader';
 import Button from 'components/Button/Button';
 
-export default class ImageGallery extends Component {
-  state = {
-  page: 1,
-  pictures: [],
-  status: 'init',
-};
-  
-async componentDidUpdate(prevProps, prevState) {
-  if (prevProps.searchPicture !== this.props.searchPicture) {
-    this.setState({ status: 'loading' });
-    try {
-      const pictures = await fetchPictures(this.props.searchPicture);
-      if (pictures.length === 0) {
-        this.setState({ pictures, status: 'error' });
-        return alert('Картинок с таким запросом не найдено.');
-      };
-      
-      this.setState({ pictures, status: 'success' });
-    } catch (error) {
-      this.setState({ status: 'error'});
+export default function ImageGallery({searchPicture}) {
+ 
+  const [page, setPage] = useState(1);
+  const [pictures, setPictures] = useState([]);
+  const [status, setStatus] = useState('init');
+
+  const isFirstRender = useRef(true);
+    
+    
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
-  }
 
-  if (prevState.page !== this.state.page && prevProps.searchPicture === this.props.searchPicture) {
-    const newPage = await fetchPictures(this.props.searchPicture, this.state.page);
-    this.setState((prevState) => ({ pictures: [...prevState.pictures, ...newPage] }));
-  }
-}
+    setStatus('loading');
+
+    async function getData() {
+      try {
+        const pictures = await fetchPictures(searchPicture);
+        if (pictures.length === 0) {
+          setPictures(pictures);
+          setStatus('error');
+          return alert('Картинок с таким запросом не найдено.');
+        };
+        setPictures(pictures);
+        setStatus('success');
+      } catch (error) {
+        setStatus('error');
+      }
+    }
+    if (searchPicture !== '') {
+      getData()
+    } else { 
+      setStatus('init');
+    }
+  }, [searchPicture]);
   
-handleLoadMore = () => {
-  this.setState((prevstate) => ({page: prevstate.page + 1}))
+  useEffect(() => { 
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    async function getData() {
+      const newPage = await fetchPictures(searchPicture, page);
+      setPictures([...pictures, ...newPage])
+    }
+    getData();
+    // eslint-disable-next-line
+  }, [page]);
+  
+  
+const handleLoadMore = () => {
+    setPage(page + 1);
 }
 
-render() {
   return (<>
-    {this.state.status === 'success' && <><ul className={css.imageGallery}>
-      {this.state.pictures.map(picture => {return <ImageGalleryItem key={picture.id} webformatURL={picture.webformatURL} largeImageURL={picture.largeImageURL} tags={picture.tags} />})}
-    </ul><Button onClick={this.handleLoadMore} /></>}
-    {this.state.status === 'loading' && <Loader />}
-    {this.state.status === 'error' && <p>Error! Попробуйте найти что-то другое.</p>}
+    {status === 'init'}
+    {status === 'success' && <><ul className={css.imageGallery}>
+      {pictures.map(picture => {return <ImageGalleryItem key={picture.id} webformatURL={picture.webformatURL} largeImageURL={picture.largeImageURL} tags={picture.tags} />})}
+    </ul><Button onClick={handleLoadMore} /></>}
+    {status === 'loading' && <Loader />}
+    {status === 'error' && <p>Error! Попробуйте найти что-то другое.</p>}
   </>);
-}
-}
+};
 
 
 ImageGallery.propTypes = {
   searchPicture: PropTypes.string.isRequired,
-}
+};
 
